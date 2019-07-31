@@ -17,9 +17,9 @@ function ngSwaggerGen(options) {
     process.exit(1);
   }
 
-  var globalTunnel = require('global-tunnel-ng');
-  globalTunnel.initialize();
-  
+  // Setup the proxy environment
+  setupProxy()
+
   $RefParser.bundle(options.swagger, { dereference: { circular: false } }).then(
     data => {
       doGenerate(data, options);
@@ -32,6 +32,25 @@ function ngSwaggerGen(options) {
   ).catch(function (error) {
     console.error(`Error: ${error}`);
   });
+}
+
+/**
+ * Sets up the environment to work behind proxies.
+ * Uses global-agent from NodeJS >= 10,
+ * and global-tunnel-ng for previous versions.
+ */
+function setupProxy() {
+  import { bootstrap } from 'global-agent';
+  import globalTunnel from 'global-tunnel-ng';
+
+  const NODEJS_VERSION = parseInt(process.version.slice(1).split('.')[0], 10);
+  if (NODEJS_VERSION >= 10) {
+    // `global-agent` works with Node.js v10 and above.
+    bootstrap({ environmentVariableNamespace: '' });
+  } else {
+    // `global-tunnel-ng` works only with Node.js v10 and below.
+    globalTunnel.initialize();
+  }
 }
 
 /**
